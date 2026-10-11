@@ -1,0 +1,5 @@
+import test from "node:test"; import assert from "node:assert/strict"; import crypto from "node:crypto"; import {validateTelegramInitData} from "./telegram";
+function signed(token:string,date:number,user:object){const p=new URLSearchParams({auth_date:String(date),user:JSON.stringify(user),query_id:"test"});const check=[...p.entries()].sort(([a],[b])=>a.localeCompare(b)).map(([k,v])=>`${k}=${v}`).join("\n");const secret=crypto.createHmac("sha256","WebAppData").update(token).digest();p.set("hash",crypto.createHmac("sha256",secret).update(check).digest("hex"));return p.toString()}
+test("valid initData accepted",()=>{const t="test-token",now=1700000000,user={id:12345,first_name:"Test"};assert.deepEqual(validateTelegramInitData(signed(t,now,user),t,now),user)});
+test("tampered initData rejected",()=>{const t="test-token",now=1700000000;assert.throws(()=>validateTelegramInitData(signed(t,now,{id:12345,first_name:"Test"}).replace("Test","Evil"),t,now),/signature/)});
+test("expired initData rejected",()=>{const t="test-token",now=1700000000;assert.throws(()=>validateTelegramInitData(signed(t,now-90000,{id:12345,first_name:"Test"}),t,now,3600),/expired/)});

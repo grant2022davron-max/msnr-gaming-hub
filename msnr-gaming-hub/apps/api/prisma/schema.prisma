@@ -1,0 +1,42 @@
+generator client { provider = "prisma-client-js" }
+datasource db { provider = "postgresql" url = env("DATABASE_URL") }
+model Player {
+ id String @id @default(cuid())
+ telegramId String @unique
+ displayName String
+ username String?
+ avatarUrl String?
+ points BigInt @default(0)
+ energy Int @default(100)
+ energyCapacity Int @default(100)
+ lastEnergyAt DateTime @default(now())
+ dailyTapCount Int @default(0)
+ dailyTapDate String?
+ totalTaps BigInt @default(0)
+ theme String @default("msnr-phantom")
+ createdAt DateTime @default(now())
+ updatedAt DateTime @updatedAt
+ tapRequests TapRequest[]
+ ledgerEntries PointLedger[]
+}
+model TapRequest {
+ id String @id @default(cuid())
+ playerId String
+ requestId String
+ tapCount Int
+ pointsDelta BigInt
+ createdAt DateTime @default(now())
+ player Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+ @@unique([playerId, requestId])
+ @@index([playerId, createdAt])
+}
+model PointLedger {
+ id String @id @default(cuid())
+ playerId String
+ amount BigInt
+ reason String
+ referenceId String?
+ createdAt DateTime @default(now())
+ player Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+ @@index([playerId, createdAt])
+}
